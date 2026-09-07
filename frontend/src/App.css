@@ -1,0 +1,346 @@
+.page {
+  height: 100dvh;
+  display: flex;
+  justify-content: center;
+  padding: 2rem;
+  overflow: hidden;
+}
+
+.card {
+  width: 100%;
+  max-width: 1000px;
+  height: 100%;
+  display: flex;
+  flex-direction: column;
+  min-height: 0;
+  background: #fff;
+  border: 1px solid #e5e7eb;
+  border-radius: 14px;
+  box-shadow: 0 1px 2px rgba(16, 24, 40, 0.04), 0 8px 24px rgba(16, 24, 40, 0.06);
+  overflow: hidden;
+}
+
+.card-header {
+  display: flex;
+  flex-wrap: wrap;
+  align-items: baseline;
+  justify-content: space-between;
+  gap: 0.35rem 1rem;
+  padding: 1.5rem 1.75rem;
+  border-bottom: 1px solid #eef0f2;
+  flex-shrink: 0;
+}
+
+.title-group {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+  min-width: 0;
+}
+
+.logo-group {
+  display: flex;
+  align-items: center;
+  gap: 0.6rem;
+  flex-shrink: 0;
+}
+
+.logo {
+  height: 36px;
+  width: auto;
+  flex-shrink: 0;
+  object-fit: contain;
+}
+
+.card-header h1 {
+  margin: 0;
+  font-size: clamp(1.15rem, 1rem + 1.2vw, 1.6rem);
+  font-weight: 600;
+  color: #111827;
+  letter-spacing: -0.01em;
+}
+
+.subtitle {
+  font-size: 1.05rem;
+  color: #6b7280;
+  white-space: nowrap;
+}
+
+.state {
+  padding: 3rem 1.75rem;
+  text-align: center;
+  color: #6b7280;
+  font-size: 1.1rem;
+}
+
+.state.error {
+  color: #b42318;
+}
+
+.tabs {
+  display: flex;
+  gap: 0.5rem;
+  padding: 1rem 1.75rem 0;
+  flex-shrink: 0;
+}
+
+.tab {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.45rem;
+  border: 1px solid transparent;
+  background: transparent;
+  color: #6b7280;
+  font-size: 0.95rem;
+  font-weight: 500;
+  padding: 0.5rem 0.95rem;
+  border-radius: 999px;
+  cursor: pointer;
+  transition: background 0.15s ease, color 0.15s ease;
+}
+
+.tab:hover {
+  background: #f3f4f6;
+}
+
+.tab.active {
+  background: #111827;
+  color: #fff;
+}
+
+.tab-count {
+  font-size: 0.8rem;
+  font-weight: 600;
+  padding: 0.05rem 0.45rem;
+  border-radius: 999px;
+  background: rgba(107, 114, 128, 0.15);
+  color: inherit;
+}
+
+.tab.active .tab-count {
+  background: rgba(255, 255, 255, 0.2);
+}
+
+.toolbar {
+  padding: 1rem 1.75rem;
+  border-bottom: 1px solid #eef0f2;
+  flex-shrink: 0;
+}
+
+.search-input {
+  width: 100%;
+  max-width: 320px;
+  font-size: 1.05rem;
+  padding: 0.55rem 0.85rem;
+  border: 1px solid #d1d5db;
+  border-radius: 8px;
+  color: #1f2937;
+  outline: none;
+  transition: border-color 0.15s ease, box-shadow 0.15s ease;
+}
+
+.search-input:focus {
+  border-color: #6366f1;
+  box-shadow: 0 0 0 3px rgba(99, 102, 241, 0.12);
+}
+
+.search-input::placeholder {
+  color: #9ca3af;
+}
+
+.empty-cell {
+  padding: 2.5rem 1.75rem;
+  text-align: center;
+  color: #9ca3af;
+  font-size: 1.05rem;
+}
+
+.table-wrap {
+  flex: 1;
+  min-height: 0;
+  overflow: auto;
+}
+
+.quota-table {
+  width: 100%;
+  border-collapse: collapse;
+}
+
+.quota-table thead th {
+  position: sticky;
+  top: 0;
+  z-index: 1;
+  text-align: left;
+  font-size: 0.85rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #9ca3af;
+  padding: 0.85rem 1.75rem;
+  background: #fafafa;
+  border-bottom: 1px solid #eef0f2;
+}
+
+.quota-table td {
+  padding: 0.9rem 1.75rem;
+  border-bottom: 1px solid #f3f4f6;
+  vertical-align: middle;
+}
+
+.quota-table tbody tr:last-child td {
+  border-bottom: none;
+}
+
+.quota-table tbody tr:hover {
+  background: #fafbfc;
+}
+
+.team-cell {
+  font-family: ui-monospace, SFMono-Regular, Menlo, monospace;
+  font-size: 1.05rem;
+  font-weight: 500;
+  color: #1f2937;
+  white-space: nowrap;
+}
+
+.usage-cell {
+  display: flex;
+  flex-direction: column;
+  gap: 0.4rem;
+  min-width: 180px;
+}
+
+.usage-numbers {
+  font-size: 1rem;
+  color: #374151;
+  font-variant-numeric: tabular-nums;
+  white-space: nowrap;
+}
+
+.usage-numbers .of {
+  margin: 0 0.25rem;
+  color: #d1d5db;
+}
+
+.usage-numbers .limit {
+  color: #9ca3af;
+}
+
+.usage-bar {
+  height: 6px;
+  border-radius: 999px;
+  background: #f0f1f3;
+  overflow: hidden;
+}
+
+.usage-bar-fill {
+  height: 100%;
+  border-radius: 999px;
+  background: #10b981;
+  transition: width 0.2s ease;
+}
+
+.usage-bar[data-level="high"] .usage-bar-fill {
+  background: #f59e0b;
+}
+
+.usage-bar[data-level="critical"] .usage-bar-fill {
+  background: #ef4444;
+}
+
+.pagination {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 1rem;
+  padding: 1rem 1.75rem;
+  border-top: 1px solid #eef0f2;
+  background: #fafafa;
+  flex-shrink: 0;
+}
+
+.range {
+  font-size: 0.85rem;
+  color: #6b7280;
+}
+
+.pagination-controls {
+  display: flex;
+  align-items: center;
+  gap: 0.85rem;
+}
+
+.page-indicator {
+  font-size: 0.85rem;
+  color: #6b7280;
+  white-space: nowrap;
+}
+
+.pagination button {
+  border: 1px solid #d1d5db;
+  background: #fff;
+  color: #374151;
+  font-size: 0.9rem;
+  font-weight: 500;
+  padding: 0.45rem 0.9rem;
+  border-radius: 8px;
+  cursor: pointer;
+  transition: background 0.15s ease, border-color 0.15s ease;
+}
+
+.pagination button:hover:not(:disabled) {
+  background: #f3f4f6;
+  border-color: #9ca3af;
+}
+
+.pagination button:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}
+
+@media (max-width: 640px) {
+  .page {
+    padding: 0;
+  }
+
+  .card {
+    border-radius: 0;
+    border-left: none;
+    border-right: none;
+  }
+
+  .card-header {
+    padding: 1.1rem 1.1rem;
+  }
+
+  .tabs {
+    padding: 0.85rem 1.1rem 0;
+  }
+
+  .toolbar {
+    padding: 0.85rem 1.1rem;
+  }
+
+  .search-input {
+    max-width: none;
+  }
+
+  .quota-table thead th,
+  .quota-table td {
+    padding: 0.75rem 1.1rem;
+  }
+
+  .usage-cell {
+    min-width: 140px;
+  }
+
+  .pagination {
+    flex-direction: column;
+    align-items: stretch;
+    padding: 0.85rem 1.1rem;
+  }
+
+  .pagination-controls {
+    justify-content: space-between;
+  }
+}

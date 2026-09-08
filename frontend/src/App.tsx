@@ -1,5 +1,6 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { fetchBilling, fetchQuota } from "./api";
+import { CategoryMeter, QuotaStatusMeter, TopUsageChart } from "./Insights";
 import type { BillingSummary, QuotaItem } from "./types";
 import "./App.css";
 
@@ -31,6 +32,15 @@ function formatCost(billing: BillingSummary) {
   } catch {
     return `${billing.amount.toFixed(2)} ${billing.unit}`;
   }
+}
+
+function CoinIcon() {
+  return (
+    <svg className="coin-icon" viewBox="0 0 24 24" width="0.8em" height="0.8em" aria-hidden="true">
+      <circle cx="12" cy="12" r="10" fill="#f5b301" stroke="#c98500" strokeWidth="1.5" />
+      <circle cx="12" cy="12" r="6.5" fill="none" stroke="#c98500" strokeWidth="1" opacity="0.6" />
+    </svg>
+  );
 }
 
 function Sparkline({ points }: { points: number[] }) {
@@ -90,6 +100,7 @@ function App() {
   const [billing, setBilling] = useState<BillingSummary | null>(null);
   const [sortKey, setSortKey] = useState<SortKey>("usage");
   const [sortDir, setSortDir] = useState<SortDir>("desc");
+  const [insightsOpen, setInsightsOpen] = useState(true);
   const hasLoadedRef = useRef(false);
 
   const loadQuota = useCallback(() => {
@@ -201,7 +212,7 @@ function App() {
               />
             </div>
             <h1>
-              <span className="title-gradient">ShowMeYourAgent</span> Token Dashboard
+              <span className="title-gradient">ShowMeYourAgent</span> T<CoinIcon />ken Dashboard
             </h1>
           </div>
           <div className="header-stats">
@@ -222,6 +233,24 @@ function App() {
 
         {!loading && !error && (
           <>
+            <div className="insights-section">
+              <button
+                type="button"
+                className="insights-toggle"
+                onClick={() => setInsightsOpen((v) => !v)}
+                aria-expanded={insightsOpen}
+              >
+                {insightsOpen ? "Hide overview" : "Show overview"}
+              </button>
+              {insightsOpen && (
+                <div className="insights-grid">
+                  <QuotaStatusMeter exceededCount={exceededCount} remainingCount={remainingCount} />
+                  <CategoryMeter items={items} />
+                  <TopUsageChart items={items} />
+                </div>
+              )}
+            </div>
+
             <div className="tabs">
               <button
                 type="button"

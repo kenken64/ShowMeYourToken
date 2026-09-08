@@ -60,6 +60,11 @@
   letter-spacing: -0.01em;
 }
 
+.coin-icon {
+  vertical-align: -0.05em;
+  margin: 0 0.01em;
+}
+
 .title-gradient {
   background: linear-gradient(90deg, #6366f1, #8b5cf6, #ec4899);
   -webkit-background-clip: text;
@@ -111,6 +116,127 @@
 
 .state.error {
   color: #b42318;
+}
+
+.insights-section {
+  padding: 1rem 1.75rem 0;
+  flex-shrink: 0;
+}
+
+.insights-toggle {
+  border: none;
+  background: transparent;
+  color: #6b7280;
+  font-size: 0.8rem;
+  font-weight: 500;
+  padding: 0;
+  cursor: pointer;
+  text-decoration: underline;
+  text-underline-offset: 2px;
+}
+
+.insights-toggle:hover {
+  color: #374151;
+}
+
+.insights-grid {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+  gap: 0.85rem;
+  margin-top: 0.75rem;
+}
+
+.insight-panel {
+  border: 1px solid #eef0f2;
+  border-radius: 10px;
+  padding: 0.85rem 1rem;
+  min-width: 0;
+}
+
+.insight-panel-wide {
+  grid-column: 1 / -1;
+}
+
+.insight-title {
+  margin: 0 0 0.6rem;
+  font-size: 0.75rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  letter-spacing: 0.04em;
+  color: #9ca3af;
+}
+
+.stacked-meter {
+  display: flex;
+  height: 18px;
+  border-radius: 999px;
+  overflow: hidden;
+  gap: 2px;
+  background: #fff;
+}
+
+.stacked-meter-segment {
+  min-width: 3px;
+  transition: flex-grow 0.2s ease;
+}
+
+.stacked-meter-legend {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 0.4rem 0.9rem;
+  margin-top: 0.65rem;
+}
+
+.legend-item {
+  display: inline-flex;
+  align-items: center;
+  gap: 0.35rem;
+  font-size: 0.8rem;
+  color: #374151;
+}
+
+.legend-item strong {
+  font-weight: 600;
+  color: #111827;
+}
+
+.legend-swatch {
+  width: 8px;
+  height: 8px;
+  border-radius: 50%;
+  flex-shrink: 0;
+}
+
+.legend-pct {
+  color: #9ca3af;
+}
+
+.top-usage-list {
+  display: flex;
+  flex-direction: column;
+  gap: 0.5rem;
+}
+
+.top-usage-row {
+  display: grid;
+  grid-template-columns: minmax(80px, 140px) 1fr 34px;
+  align-items: center;
+  gap: 0.65rem;
+}
+
+.top-usage-label {
+  font-size: 0.82rem;
+  color: #374151;
+  white-space: nowrap;
+  overflow: hidden;
+  text-overflow: ellipsis;
+}
+
+.top-usage-pct {
+  font-size: 0.8rem;
+  color: #9ca3af;
+  font-variant-numeric: tabular-nums;
+  text-align: right;
 }
 
 .tabs {
@@ -477,6 +603,14 @@
 
   .card-header {
     padding: 1.1rem 1.1rem;
+  }
+
+  .insights-section {
+    padding: 0.85rem 1.1rem 0;
+  }
+
+  .top-usage-row {
+    grid-template-columns: minmax(60px, 100px) 1fr 32px;
   }
 
   .tabs {

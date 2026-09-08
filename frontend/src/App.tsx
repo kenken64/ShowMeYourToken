@@ -89,7 +89,7 @@ function App() {
                 alt="ISS"
               />
             </div>
-            <h1>NUS ISS ShowMeYourAgent Token Quota</h1>
+            <h1>NUS ISS ShowMeYourAgent Token Dashboard</h1>
           </div>
           {!loading && !error && (
             <span className="subtitle">{items.length} teams</span>

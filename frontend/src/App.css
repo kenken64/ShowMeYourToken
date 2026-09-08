@@ -168,19 +168,19 @@
 }
 
 .col-name {
-  width: 30%;
+  width: 28%;
 }
 
 .col-id {
-  width: 22%;
+  width: 20%;
 }
 
 .col-category {
-  width: 14%;
+  width: 16%;
 }
 
 .col-usage {
-  width: 34%;
+  width: 36%;
 }
 
 .quota-table thead th {
@@ -363,6 +363,10 @@
 
   .search-input {
     max-width: none;
+  }
+
+  .quota-table {
+    min-width: 600px;
   }
 
   .quota-table thead th,

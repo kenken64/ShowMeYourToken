@@ -4,7 +4,7 @@ import { CategoryMeter, QuotaStatusMeter, TopUsageChart } from "./Insights";
 import type { BillingSummary, QuotaItem } from "./types";
 import "./App.css";
 
-const PAGE_SIZE = 50;
+const PAGE_SIZE = 7;
 const REFRESH_INTERVAL_MS = 60_000;
 
 function usagePercent(item: QuotaItem) {
@@ -32,6 +32,15 @@ function formatCost(billing: BillingSummary) {
   } catch {
     return `${billing.amount.toFixed(2)} ${billing.unit}`;
   }
+}
+
+function SearchIcon() {
+  return (
+    <svg viewBox="0 0 20 20" width="16" height="16" fill="none" aria-hidden="true">
+      <circle cx="9" cy="9" r="6.5" stroke="currentColor" strokeWidth="1.8" />
+      <line x1="14" y1="14" x2="18" y2="18" stroke="currentColor" strokeWidth="1.8" strokeLinecap="round" />
+    </svg>
+  );
 }
 
 function CoinIcon() {
@@ -102,6 +111,7 @@ function App() {
   const [sortDir, setSortDir] = useState<SortDir>("desc");
   const [insightsOpen, setInsightsOpen] = useState(false);
   const hasLoadedRef = useRef(false);
+  const searchInputRef = useRef<HTMLInputElement>(null);
 
   const loadQuota = useCallback(() => {
     setRefreshing(true);
@@ -271,14 +281,26 @@ function App() {
             </div>
 
             <div className="toolbar">
-              <input
-                type="search"
-                className="search-input"
-                placeholder="Search team ID or name…"
-                value={search}
-                onChange={(e) => setSearch(e.target.value)}
-                aria-label="Search team ID or name"
-              />
+              <form
+                className="search-wrap"
+                onSubmit={(e) => {
+                  e.preventDefault();
+                  searchInputRef.current?.blur();
+                }}
+              >
+                <button type="submit" className="search-icon-button" aria-label="Search">
+                  <SearchIcon />
+                </button>
+                <input
+                  ref={searchInputRef}
+                  type="search"
+                  className="search-input"
+                  placeholder="Search team ID or name…"
+                  value={search}
+                  onChange={(e) => setSearch(e.target.value)}
+                  aria-label="Search team ID or name"
+                />
+              </form>
               <div className="refresh-group">
                 {lastUpdated && (
                   <span className="updated-at">Updated {lastUpdated.toLocaleTimeString()}</span>

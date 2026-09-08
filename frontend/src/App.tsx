@@ -108,7 +108,9 @@ function App() {
                 alt="ISS"
               />
             </div>
-            <h1>NUS ISS ShowMeYourAgent Token Dashboard</h1>
+            <h1>
+              <span className="title-gradient">ShowMeYourAgent</span> Token Dashboard
+            </h1>
           </div>
           <div className="header-stats">
             {!loading && !error && (

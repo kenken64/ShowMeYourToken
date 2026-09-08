@@ -1,6 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
-import { fetchQuota } from "./api";
-import type { QuotaItem } from "./types";
+import { fetchBilling, fetchQuota } from "./api";
+import type { BillingSummary, QuotaItem } from "./types";
 import "./App.css";
 
 const PAGE_SIZE = 50;
@@ -20,6 +20,18 @@ function isExceeded(item: QuotaItem) {
   return item.tokenLimit > 0 && item.usedTokens >= item.tokenLimit;
 }
 
+function formatCost(billing: BillingSummary) {
+  try {
+    return new Intl.NumberFormat("en-US", {
+      style: "currency",
+      currency: billing.unit,
+      maximumFractionDigits: 2,
+    }).format(billing.amount);
+  } catch {
+    return `${billing.amount.toFixed(2)} ${billing.unit}`;
+  }
+}
+
 type Tab = "exceeded" | "remaining";
 
 function App() {
@@ -29,12 +41,19 @@ function App() {
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState("");
   const [tab, setTab] = useState<Tab>("remaining");
+  const [billing, setBilling] = useState<BillingSummary | null>(null);
 
   useEffect(() => {
     fetchQuota()
       .then((data) => setItems(data.items))
       .catch((err) => setError(err.message))
       .finally(() => setLoading(false));
+  }, []);
+
+  useEffect(() => {
+    fetchBilling()
+      .then(setBilling)
+      .catch((err) => console.error("Failed to load billing:", err));
   }, []);
 
   const exceededCount = useMemo(
@@ -91,9 +110,16 @@ function App() {
             </div>
             <h1>NUS ISS ShowMeYourAgent Token Dashboard</h1>
           </div>
-          {!loading && !error && (
-            <span className="subtitle">{items.length} teams</span>
-          )}
+          <div className="header-stats">
+            {!loading && !error && (
+              <span className="subtitle">{items.length} teams</span>
+            )}
+            {billing && (
+              <span className="billing-chip" title={`AWS cost ${billing.periodStart} to ${billing.periodEnd}${billing.estimated ? " (estimated)" : ""}`}>
+                {formatCost(billing)} MTD
+              </span>
+            )}
+          </div>
         </header>
 
         {loading && <div className="state">Loading…</div>}

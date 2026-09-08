@@ -1,6 +1,7 @@
 import { join, normalize, sep } from "node:path";
 import { TABLE_NAME } from "./dynamo";
 import { getEnrichedQuota } from "./quotaService";
+import { getMonthToDateCost } from "./costExplorer";
 import { sendDailyReport } from "./dailyReport";
 import { startDailyScheduler } from "./scheduler";
 
@@ -55,6 +56,16 @@ Bun.serve({
       } catch (err) {
         console.error("DynamoDB scan failed:", err);
         return json({ error: "Failed to fetch data from DynamoDB" }, 500);
+      }
+    }
+
+    if (url.pathname === "/api/billing" && req.method === "GET") {
+      try {
+        const billing = await getMonthToDateCost();
+        return json(billing);
+      } catch (err) {
+        console.error("Cost Explorer fetch failed:", err);
+        return json({ error: "Failed to fetch billing data" }, 500);
       }
     }
 

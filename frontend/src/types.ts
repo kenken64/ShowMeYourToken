@@ -14,3 +14,12 @@ export interface QuotaResponse {
   items: QuotaItem[];
   count: number;
 }
+
+export interface BillingSummary {
+  amount: number;
+  unit: string;
+  periodStart: string;
+  periodEnd: string;
+  estimated: boolean;
+  updatedAt: string;
+}

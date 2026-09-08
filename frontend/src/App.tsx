@@ -56,7 +56,11 @@ function App() {
   const filtered = useMemo(() => {
     const query = search.trim().toLowerCase();
     if (!query) return sorted;
-    return sorted.filter((item) => item.teamId.toLowerCase().includes(query));
+    return sorted.filter(
+      (item) =>
+        item.teamId.toLowerCase().includes(query) ||
+        item.teamName?.toLowerCase().includes(query)
+    );
   }, [sorted, search]);
 
   useEffect(() => {
@@ -120,25 +124,33 @@ function App() {
               <input
                 type="search"
                 className="search-input"
-                placeholder="Search team ID…"
+                placeholder="Search team ID or name…"
                 value={search}
                 onChange={(e) => setSearch(e.target.value)}
-                aria-label="Search team ID"
+                aria-label="Search team ID or name"
               />
             </div>
 
             <div className="table-wrap">
               <table className="quota-table">
+                <colgroup>
+                  <col className="col-name" />
+                  <col className="col-id" />
+                  <col className="col-category" />
+                  <col className="col-usage" />
+                </colgroup>
                 <thead>
                   <tr>
+                    <th>Team Name</th>
                     <th>Team ID</th>
+                    <th>Category</th>
                     <th>Used / Limit</th>
                   </tr>
                 </thead>
                 <tbody>
                   {pageItems.length === 0 && (
                     <tr>
-                      <td colSpan={2} className="empty-cell">
+                      <td colSpan={4} className="empty-cell">
                         {search
                           ? `No teams match “${search}”`
                           : tab === "exceeded"
@@ -152,7 +164,15 @@ function App() {
                     const level = usageLevel(pct);
                     return (
                       <tr key={item.apiKeyId}>
+                        <td className="team-name-cell">{item.teamName ?? "—"}</td>
                         <td className="team-cell">{item.teamId}</td>
+                        <td>
+                          {item.category ? (
+                            <span className="category-badge">{item.category}</span>
+                          ) : (
+                            "—"
+                          )}
+                        </td>
                         <td>
                           <div className="usage-cell">
                             <div className="usage-numbers">

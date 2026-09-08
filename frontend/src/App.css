@@ -164,6 +164,23 @@
 .quota-table {
   width: 100%;
   border-collapse: collapse;
+  table-layout: fixed;
+}
+
+.col-name {
+  width: 30%;
+}
+
+.col-id {
+  width: 22%;
+}
+
+.col-category {
+  width: 14%;
+}
+
+.col-usage {
+  width: 34%;
 }
 
 .quota-table thead th {
@@ -176,15 +193,21 @@
   text-transform: uppercase;
   letter-spacing: 0.04em;
   color: #9ca3af;
-  padding: 0.85rem 1.75rem;
+  padding: 0.85rem 1.25rem;
   background: #fafafa;
   border-bottom: 1px solid #eef0f2;
+  box-sizing: border-box;
+  overflow: hidden;
+  text-overflow: ellipsis;
+  white-space: nowrap;
 }
 
 .quota-table td {
-  padding: 0.9rem 1.75rem;
+  padding: 0.9rem 1.25rem;
   border-bottom: 1px solid #f3f4f6;
   vertical-align: middle;
+  box-sizing: border-box;
+  overflow: hidden;
 }
 
 .quota-table tbody tr:last-child td {
@@ -201,13 +224,30 @@
   font-weight: 500;
   color: #1f2937;
   white-space: nowrap;
+  text-overflow: ellipsis;
+}
+
+.team-name-cell {
+  color: #1f2937;
+  overflow-wrap: anywhere;
+}
+
+.category-badge {
+  display: inline-flex;
+  align-items: center;
+  font-size: 0.8rem;
+  font-weight: 600;
+  padding: 0.15rem 0.6rem;
+  border-radius: 999px;
+  background: #eef2ff;
+  color: #4338ca;
+  white-space: nowrap;
 }
 
 .usage-cell {
   display: flex;
   flex-direction: column;
   gap: 0.4rem;
-  min-width: 180px;
 }
 
 .usage-numbers {
@@ -327,11 +367,7 @@
 
   .quota-table thead th,
   .quota-table td {
-    padding: 0.75rem 1.1rem;
-  }
-
-  .usage-cell {
-    min-width: 140px;
+    padding: 0.75rem 0.85rem;
   }
 
   .pagination {

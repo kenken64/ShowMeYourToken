@@ -50,12 +50,16 @@ Expected DynamoDB item shape (one row per team/API key):
 }
 ```
 
+### Team directory (`backend/data/API_Team_Code_Mapping.xlsx`)
+
+`backend/src/teamDirectory.ts` loads this spreadsheet once at startup and builds an in-memory lookup keyed on its `api_key_name` column, which matches DynamoDB's `teamId` (e.g. `hack-team-008`). The `/api/quota` response is enriched with the matching `Team Code`, `Team Name`, and `Category` columns; teams with no match in the spreadsheet get `null` for these fields. To update the mapping, replace the xlsx file and restart the backend.
+
 ### API
 
 | Method | Path | Description |
 |---|---|---|
 | `GET` | `/api/health` | Health check; returns `{ ok, table }` |
-| `GET` | `/api/quota` | Scans the DynamoDB table (paginating through `LastEvaluatedKey`) and returns `{ items, count }` |
+| `GET` | `/api/quota` | Scans the DynamoDB table (paginating through `LastEvaluatedKey`), joins each item against the team directory, and returns `{ items, count }` where each item also has `teamCode`, `teamName`, and `category` |
 
 Any other `GET` request is served from `backend/public` (the built frontend), falling back to `index.html` for client-side routing.
 

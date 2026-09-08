@@ -1,5 +1,6 @@
 import { join, normalize, sep } from "node:path";
 import { scanTable, TABLE_NAME } from "./dynamo";
+import { getTeamInfo } from "./teamDirectory";
 
 const PORT = Number(process.env.PORT ?? 4000);
 const CORS_ORIGIN = process.env.CORS_ORIGIN ?? "http://localhost:5173";
@@ -48,7 +49,17 @@ Bun.serve({
     if (url.pathname === "/api/quota" && req.method === "GET") {
       try {
         const items = await scanTable();
-        return json({ items, count: items.length });
+        const enriched = items.map((item) => {
+          const teamId = item.teamId;
+          const info = typeof teamId === "string" ? getTeamInfo(teamId) : undefined;
+          return {
+            ...item,
+            teamCode: info?.teamCode ?? null,
+            teamName: info?.teamName ?? null,
+            category: info?.category ?? null,
+          };
+        });
+        return json({ items: enriched, count: enriched.length });
       } catch (err) {
         console.error("DynamoDB scan failed:", err);
         return json({ error: "Failed to fetch data from DynamoDB" }, 500);

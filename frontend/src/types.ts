@@ -5,6 +5,9 @@ export interface QuotaItem {
   usedTokens: number;
   reservedTokens: number;
   status: string;
+  teamCode: string | null;
+  teamName: string | null;
+  category: string | null;
 }
 
 export interface QuotaResponse {

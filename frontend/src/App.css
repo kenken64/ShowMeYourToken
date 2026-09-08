@@ -366,7 +366,23 @@
   }
 
   .quota-table {
-    min-width: 600px;
+    min-width: 680px;
+  }
+
+  .col-name {
+    width: 22%;
+  }
+
+  .col-id {
+    width: 25%;
+  }
+
+  .col-category {
+    width: 15%;
+  }
+
+  .col-usage {
+    width: 38%;
   }
 
   .quota-table thead th,

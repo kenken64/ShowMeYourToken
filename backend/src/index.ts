@@ -1,6 +1,8 @@
 import { join, normalize, sep } from "node:path";
-import { scanTable, TABLE_NAME } from "./dynamo";
-import { getTeamInfo } from "./teamDirectory";
+import { TABLE_NAME } from "./dynamo";
+import { getEnrichedQuota } from "./quotaService";
+import { sendDailyReport } from "./dailyReport";
+import { startDailyScheduler } from "./scheduler";
 
 const PORT = Number(process.env.PORT ?? 4000);
 const CORS_ORIGIN = process.env.CORS_ORIGIN ?? "http://localhost:5173";
@@ -48,18 +50,8 @@ Bun.serve({
 
     if (url.pathname === "/api/quota" && req.method === "GET") {
       try {
-        const items = await scanTable();
-        const enriched = items.map((item) => {
-          const teamId = item.teamId;
-          const info = typeof teamId === "string" ? getTeamInfo(teamId) : undefined;
-          return {
-            ...item,
-            teamCode: info?.teamCode ?? null,
-            teamName: info?.teamName ?? null,
-            category: info?.category ?? null,
-          };
-        });
-        return json({ items: enriched, count: enriched.length });
+        const items = await getEnrichedQuota();
+        return json({ items, count: items.length });
       } catch (err) {
         console.error("DynamoDB scan failed:", err);
         return json({ error: "Failed to fetch data from DynamoDB" }, 500);
@@ -79,3 +71,16 @@ Bun.serve({
 });
 
 console.log(`Backend running at http://localhost:${PORT} (table: ${TABLE_NAME})`);
+
+if (process.env.SLACK_WEBHOOK_URL) {
+  const hours = (process.env.SLACK_REPORT_HOURS ?? "9")
+    .split(",")
+    .map((h) => Number(h.trim()))
+    .filter((h) => Number.isInteger(h) && h >= 0 && h <= 23);
+  const timeZone = process.env.SLACK_REPORT_TZ ?? "Asia/Singapore";
+  for (const hour of hours) {
+    startDailyScheduler(hour, timeZone, sendDailyReport);
+  }
+} else {
+  console.log("SLACK_WEBHOOK_URL not set; daily Slack report disabled");
+}

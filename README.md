@@ -63,6 +63,23 @@ Expected DynamoDB item shape (one row per team/API key):
 
 Any other `GET` request is served from `backend/public` (the built frontend), falling back to `index.html` for client-side routing.
 
+### Daily Slack quota report
+
+If `SLACK_WEBHOOK_URL` is set, the backend posts a daily report to that [Slack Incoming Webhook](https://api.slack.com/messaging/webhooks) at each hour listed in `SLACK_REPORT_HOURS` (local time in `SLACK_REPORT_TZ`), split into an "Exceeded quota" and an "Active usage" section (teams with zero usage are omitted). The scheduler (`backend/src/scheduler.ts`) runs in-process — no external cron needed — and re-schedules itself after each run.
+
+| Variable | Description | Default |
+|---|---|---|
+| `SLACK_WEBHOOK_URL` | Slack Incoming Webhook URL; leave unset to disable the report | — |
+| `SLACK_REPORT_HOURS` | Comma-separated 24h local hours to post, e.g. `9,23` | `9` |
+| `SLACK_REPORT_TZ` | IANA timezone for `SLACK_REPORT_HOURS` | `Asia/Singapore` |
+
+Test it on demand without waiting for the schedule:
+
+```bash
+cd backend
+bun run report:slack:test
+```
+
 ## Frontend
 
 ```bash

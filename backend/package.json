@@ -5,7 +5,8 @@
   "private": true,
   "scripts": {
     "dev": "bun --watch run src/index.ts",
-    "start": "bun run src/index.ts"
+    "start": "bun run src/index.ts",
+    "report:slack:test": "bun run src/scripts/sendSlackReportNow.ts"
   },
   "devDependencies": {
     "@types/bun": "latest"

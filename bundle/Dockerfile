@@ -19,6 +19,7 @@ ENV NODE_ENV=production
 COPY --from=backend-deps /app/backend/node_modules ./node_modules
 COPY backend/package.json backend/bun.lock ./
 COPY backend/src ./src
+COPY backend/data ./data
 COPY --from=frontend-build /app/frontend/dist ./public
 
 EXPOSE 3000

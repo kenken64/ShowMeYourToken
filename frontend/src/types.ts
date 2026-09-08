@@ -15,6 +15,11 @@ export interface QuotaResponse {
   count: number;
 }
 
+export interface CostTrendPoint {
+  date: string;
+  amount: number;
+}
+
 export interface BillingSummary {
   amount: number;
   unit: string;
@@ -22,4 +27,5 @@ export interface BillingSummary {
   periodEnd: string;
   estimated: boolean;
   updatedAt: string;
+  trend: CostTrendPoint[];
 }

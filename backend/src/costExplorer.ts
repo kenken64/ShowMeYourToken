@@ -3,6 +3,7 @@ import { CostExplorerClient, GetCostAndUsageCommand } from "@aws-sdk/client-cost
 const accessKeyId = process.env.AWS_ACCESS_KEY_ID;
 const secretAccessKey = process.env.AWS_SECRET_ACCESS_KEY;
 const CACHE_TTL_MS = Number(process.env.COST_CACHE_TTL_MINUTES ?? 360) * 60_000;
+const TREND_DAYS = Number(process.env.COST_TREND_DAYS ?? 14);
 
 // Cost Explorer is only available in us-east-1, regardless of where the
 // billed resources actually live.
@@ -69,4 +70,49 @@ export async function getMonthToDateCost(): Promise<BillingSummary> {
   cache = summary;
   cacheFetchedAt = now;
   return summary;
+}
+
+export interface CostTrendPoint {
+  date: string;
+  amount: number;
+}
+
+let trendCache: CostTrendPoint[] | null = null;
+let trendCacheFetchedAt = 0;
+
+async function fetchDailyCostTrend(): Promise<CostTrendPoint[]> {
+  if (!client) {
+    throw new Error("Missing AWS credentials for Cost Explorer");
+  }
+
+  const fmt = (d: Date) => d.toISOString().slice(0, 10);
+  const todayEnd = new Date();
+  const start = new Date(todayEnd.getTime() - TREND_DAYS * 24 * 60 * 60 * 1000);
+  const endExclusive = new Date(todayEnd.getTime() + 24 * 60 * 60 * 1000);
+
+  const res = await client.send(
+    new GetCostAndUsageCommand({
+      TimePeriod: { Start: fmt(start), End: fmt(endExclusive) },
+      Granularity: "DAILY",
+      Metrics: ["UnblendedCost"],
+    })
+  );
+
+  return (res.ResultsByTime ?? []).map((r) => ({
+    date: r.TimePeriod?.Start ?? "",
+    amount: Number(r.Total?.UnblendedCost?.Amount ?? 0),
+  }));
+}
+
+/** Cached daily cost trend for the last COST_TREND_DAYS days; same refresh cadence as getMonthToDateCost. */
+export async function getDailyCostTrend(): Promise<CostTrendPoint[]> {
+  const now = Date.now();
+  if (trendCache && now - trendCacheFetchedAt < CACHE_TTL_MS) {
+    return trendCache;
+  }
+
+  const trend = await fetchDailyCostTrend();
+  trendCache = trend;
+  trendCacheFetchedAt = now;
+  return trend;
 }

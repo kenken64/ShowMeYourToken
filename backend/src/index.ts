@@ -1,7 +1,7 @@
 import { join, normalize, sep } from "node:path";
 import { TABLE_NAME } from "./dynamo";
 import { getEnrichedQuota } from "./quotaService";
-import { getMonthToDateCost } from "./costExplorer";
+import { getDailyCostTrend, getMonthToDateCost, type CostTrendPoint } from "./costExplorer";
 import { sendDailyReport } from "./dailyReport";
 import { startDailyScheduler } from "./scheduler";
 
@@ -62,7 +62,13 @@ Bun.serve({
     if (url.pathname === "/api/billing" && req.method === "GET") {
       try {
         const billing = await getMonthToDateCost();
-        return json(billing);
+        let trend: CostTrendPoint[] = [];
+        try {
+          trend = await getDailyCostTrend();
+        } catch (err) {
+          console.error("Cost trend fetch failed:", err);
+        }
+        return json({ ...billing, trend });
       } catch (err) {
         console.error("Cost Explorer fetch failed:", err);
         return json({ error: "Failed to fetch billing data" }, 500);

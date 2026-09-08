@@ -1,9 +1,10 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { fetchBilling, fetchQuota } from "./api";
 import type { BillingSummary, QuotaItem } from "./types";
 import "./App.css";
 
 const PAGE_SIZE = 50;
+const REFRESH_INTERVAL_MS = 60_000;
 
 function usagePercent(item: QuotaItem) {
   if (item.tokenLimit <= 0) return 0;
@@ -32,29 +33,118 @@ function formatCost(billing: BillingSummary) {
   }
 }
 
+function Sparkline({ points }: { points: number[] }) {
+  if (points.length < 2) return null;
+
+  const width = 72;
+  const height = 22;
+  const max = Math.max(...points);
+  const min = Math.min(...points);
+  const range = max - min || 1;
+  const step = width / (points.length - 1);
+  const coords = points
+    .map((v, i) => `${(i * step).toFixed(1)},${(height - ((v - min) / range) * height).toFixed(1)}`)
+    .join(" ");
+
+  return (
+    <svg className="sparkline" width={width} height={height} viewBox={`0 0 ${width} ${height}`} aria-hidden="true">
+      <polyline points={coords} fill="none" stroke="currentColor" strokeWidth="1.5" strokeLinejoin="round" strokeLinecap="round" />
+    </svg>
+  );
+}
+
 type Tab = "exceeded" | "remaining";
+type SortKey = "name" | "id" | "category" | "usage";
+type SortDir = "asc" | "desc";
+
+const DEFAULT_SORT_DIR: Record<SortKey, SortDir> = {
+  name: "asc",
+  id: "asc",
+  category: "asc",
+  usage: "desc",
+};
+
+function compareItems(a: QuotaItem, b: QuotaItem, key: SortKey): number {
+  switch (key) {
+    case "name":
+      return (a.teamName ?? "").localeCompare(b.teamName ?? "");
+    case "id":
+      return a.teamId.localeCompare(b.teamId);
+    case "category":
+      return (a.category ?? "").localeCompare(b.category ?? "");
+    case "usage":
+      return usagePercent(a) - usagePercent(b);
+  }
+}
 
 function App() {
   const [items, setItems] = useState<QuotaItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
+  const [refreshError, setRefreshError] = useState<string | null>(null);
+  const [refreshing, setRefreshing] = useState(false);
+  const [lastUpdated, setLastUpdated] = useState<Date | null>(null);
   const [page, setPage] = useState(1);
   const [search, setSearch] = useState("");
   const [tab, setTab] = useState<Tab>("remaining");
   const [billing, setBilling] = useState<BillingSummary | null>(null);
+  const [sortKey, setSortKey] = useState<SortKey>("usage");
+  const [sortDir, setSortDir] = useState<SortDir>("desc");
+  const hasLoadedRef = useRef(false);
 
-  useEffect(() => {
-    fetchQuota()
-      .then((data) => setItems(data.items))
-      .catch((err) => setError(err.message))
-      .finally(() => setLoading(false));
+  const loadQuota = useCallback(() => {
+    setRefreshing(true);
+    return fetchQuota()
+      .then((data) => {
+        setItems(data.items);
+        setError(null);
+        setRefreshError(null);
+        setLastUpdated(new Date());
+        hasLoadedRef.current = true;
+      })
+      .catch((err) => {
+        console.error("Failed to load quota:", err);
+        if (hasLoadedRef.current) {
+          setRefreshError(err.message);
+        } else {
+          setError(err.message);
+        }
+      })
+      .finally(() => {
+        setLoading(false);
+        setRefreshing(false);
+      });
   }, []);
 
-  useEffect(() => {
-    fetchBilling()
+  const loadBilling = useCallback(() => {
+    return fetchBilling()
       .then(setBilling)
       .catch((err) => console.error("Failed to load billing:", err));
   }, []);
+
+  useEffect(() => {
+    loadQuota();
+    const interval = setInterval(() => loadQuota(), REFRESH_INTERVAL_MS);
+    return () => clearInterval(interval);
+  }, [loadQuota]);
+
+  useEffect(() => {
+    loadBilling();
+  }, [loadBilling]);
+
+  const handleRefresh = () => {
+    loadQuota();
+    loadBilling();
+  };
+
+  const handleSort = (key: SortKey) => {
+    if (key === sortKey) {
+      setSortDir((d) => (d === "asc" ? "desc" : "asc"));
+    } else {
+      setSortKey(key);
+      setSortDir(DEFAULT_SORT_DIR[key]);
+    }
+  };
 
   const exceededCount = useMemo(
     () => items.filter(isExceeded).length,
@@ -67,10 +157,10 @@ function App() {
     [items, tab]
   );
 
-  const sorted = useMemo(
-    () => [...byTab].sort((a, b) => usagePercent(b) - usagePercent(a)),
-    [byTab]
-  );
+  const sorted = useMemo(() => {
+    const dir = sortDir === "asc" ? 1 : -1;
+    return [...byTab].sort((a, b) => compareItems(a, b, sortKey) * dir);
+  }, [byTab, sortKey, sortDir]);
 
   const filtered = useMemo(() => {
     const query = search.trim().toLowerCase();
@@ -94,6 +184,8 @@ function App() {
   );
   const rangeStart = filtered.length === 0 ? 0 : (currentPage - 1) * PAGE_SIZE + 1;
   const rangeEnd = Math.min(filtered.length, currentPage * PAGE_SIZE);
+
+  const sortArrow = (key: SortKey) => (sortKey === key ? (sortDir === "asc" ? "▲" : "▼") : "");
 
   return (
     <main className="page">
@@ -119,6 +211,7 @@ function App() {
             {billing && (
               <span className="billing-chip" title={`AWS cost ${billing.periodStart} to ${billing.periodEnd}${billing.estimated ? " (estimated)" : ""}`}>
                 {formatCost(billing)} MTD
+                {billing.trend.length > 1 && <Sparkline points={billing.trend.map((p) => p.amount)} />}
               </span>
             )}
           </div>
@@ -157,6 +250,26 @@ function App() {
                 onChange={(e) => setSearch(e.target.value)}
                 aria-label="Search team ID or name"
               />
+              <div className="refresh-group">
+                {lastUpdated && (
+                  <span className="updated-at">Updated {lastUpdated.toLocaleTimeString()}</span>
+                )}
+                {refreshError && (
+                  <span className="refresh-error" title={refreshError}>
+                    Refresh failed
+                  </span>
+                )}
+                <button
+                  type="button"
+                  className="refresh-button"
+                  onClick={handleRefresh}
+                  disabled={refreshing}
+                  aria-label="Refresh now"
+                >
+                  <span className={refreshing ? "refresh-icon spinning" : "refresh-icon"}>↻</span>
+                  Refresh
+                </button>
+              </div>
             </div>
 
             <div className="table-wrap">
@@ -169,10 +282,18 @@ function App() {
                 </colgroup>
                 <thead>
                   <tr>
-                    <th>Team Name</th>
-                    <th>Team ID</th>
-                    <th>Category</th>
-                    <th>Used / Limit</th>
+                    <th className="sortable" aria-sort={sortKey === "name" ? (sortDir === "asc" ? "ascending" : "descending") : "none"} onClick={() => handleSort("name")}>
+                      Team Name <span className="sort-arrow">{sortArrow("name")}</span>
+                    </th>
+                    <th className="sortable" aria-sort={sortKey === "id" ? (sortDir === "asc" ? "ascending" : "descending") : "none"} onClick={() => handleSort("id")}>
+                      Team ID <span className="sort-arrow">{sortArrow("id")}</span>
+                    </th>
+                    <th className="sortable" aria-sort={sortKey === "category" ? (sortDir === "asc" ? "ascending" : "descending") : "none"} onClick={() => handleSort("category")}>
+                      Category <span className="sort-arrow">{sortArrow("category")}</span>
+                    </th>
+                    <th className="sortable" aria-sort={sortKey === "usage" ? (sortDir === "asc" ? "ascending" : "descending") : "none"} onClick={() => handleSort("usage")}>
+                      Used / Limit <span className="sort-arrow">{sortArrow("usage")}</span>
+                    </th>
                   </tr>
                 </thead>
                 <tbody>

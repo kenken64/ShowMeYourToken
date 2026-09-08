@@ -13,7 +13,12 @@ export interface EnrichedQuotaItem {
   category: string | null;
 }
 
-export async function getEnrichedQuota(): Promise<EnrichedQuotaItem[]> {
+const CACHE_TTL_MS = Number(process.env.QUOTA_CACHE_TTL_SECONDS ?? 20) * 1_000;
+
+let cache: EnrichedQuotaItem[] | null = null;
+let cacheFetchedAt = 0;
+
+async function fetchEnrichedQuota(): Promise<EnrichedQuotaItem[]> {
   const items = await scanTable();
   return items.map((item) => {
     const teamId = item.teamId;
@@ -25,4 +30,17 @@ export async function getEnrichedQuota(): Promise<EnrichedQuotaItem[]> {
       category: info?.category ?? null,
     } as EnrichedQuotaItem;
   });
+}
+
+/** Cached DynamoDB scan + team-directory join; refetches at most once per QUOTA_CACHE_TTL_SECONDS. */
+export async function getEnrichedQuota(): Promise<EnrichedQuotaItem[]> {
+  const now = Date.now();
+  if (cache && now - cacheFetchedAt < CACHE_TTL_MS) {
+    return cache;
+  }
+
+  const items = await fetchEnrichedQuota();
+  cache = items;
+  cacheFetchedAt = now;
+  return items;
 }

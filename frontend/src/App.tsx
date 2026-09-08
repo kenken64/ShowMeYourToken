@@ -100,7 +100,7 @@ function App() {
   const [billing, setBilling] = useState<BillingSummary | null>(null);
   const [sortKey, setSortKey] = useState<SortKey>("usage");
   const [sortDir, setSortDir] = useState<SortDir>("desc");
-  const [insightsOpen, setInsightsOpen] = useState(true);
+  const [insightsOpen, setInsightsOpen] = useState(false);
   const hasLoadedRef = useRef(false);
 
   const loadQuota = useCallback(() => {

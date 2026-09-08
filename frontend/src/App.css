@@ -389,7 +389,7 @@
 
 .table-wrap {
   flex: 1;
-  min-height: 0;
+  min-height: 160px;
   overflow: auto;
 }
 

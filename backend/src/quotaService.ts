@@ -44,3 +44,9 @@ export async function getEnrichedQuota(): Promise<EnrichedQuotaItem[]> {
   cacheFetchedAt = now;
   return items;
 }
+
+/** Drops the cached scan so the next getEnrichedQuota() refetches from DynamoDB. */
+export function invalidateQuotaCache(): void {
+  cache = null;
+  cacheFetchedAt = 0;
+}

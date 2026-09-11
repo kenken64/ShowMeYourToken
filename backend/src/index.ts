@@ -4,6 +4,7 @@ import { getEnrichedQuota } from "./quotaService";
 import { getDailyCostTrend, getMonthToDateCost, type CostTrendPoint } from "./costExplorer";
 import { sendDailyReport } from "./dailyReport";
 import { startDailyScheduler } from "./scheduler";
+import { handleAdminQuotaUpdate } from "./adminQuota";
 
 const PORT = Number(process.env.PORT ?? 4000);
 const CORS_ORIGIN = process.env.CORS_ORIGIN ?? "http://localhost:5173";
@@ -11,8 +12,8 @@ const PUBLIC_DIR = join(import.meta.dir, "..", "public");
 
 const corsHeaders = {
   "Access-Control-Allow-Origin": CORS_ORIGIN,
-  "Access-Control-Allow-Methods": "GET,OPTIONS",
-  "Access-Control-Allow-Headers": "Content-Type",
+  "Access-Control-Allow-Methods": "GET,PUT,OPTIONS",
+  "Access-Control-Allow-Headers": "Content-Type,Authorization",
 };
 
 function json(data: unknown, status = 200) {
@@ -75,6 +76,11 @@ Bun.serve({
       }
     }
 
+    if (url.pathname === "/api/admin/quota" && req.method === "PUT") {
+      const res = await handleAdminQuotaUpdate(req);
+      return new Response(res.body, { status: res.status, headers: { ...Object.fromEntries(res.headers), ...corsHeaders } });
+    }
+
     if (req.method === "GET" && !url.pathname.startsWith("/api/")) {
       const asset = await serveStatic(url.pathname === "/" ? "/index.html" : url.pathname);
       if (asset) return asset;
@@ -96,7 +102,7 @@ if (process.env.SLACK_WEBHOOK_URL) {
     .filter((h) => Number.isInteger(h) && h >= 0 && h <= 23);
   const timeZone = process.env.SLACK_REPORT_TZ ?? "Asia/Singapore";
   for (const hour of hours) {
-    startDailyScheduler(hour, timeZone, sendDailyReport);
+    startDailyScheduler(hour, timeZone, () => sendDailyReport(hour));
   }
 } else {
   console.log("SLACK_WEBHOOK_URL not set; daily Slack report disabled");

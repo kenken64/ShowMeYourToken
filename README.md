@@ -60,8 +60,30 @@ Expected DynamoDB item shape (one row per team/API key):
 |---|---|---|
 | `GET` | `/api/health` | Health check; returns `{ ok, table }` |
 | `GET` | `/api/quota` | Scans the DynamoDB table (paginating through `LastEvaluatedKey`), joins each item against the team directory, and returns `{ items, count }` where each item also has `teamCode`, `teamName`, and `category` |
+| `PUT` | `/api/admin/quota` | Bulk-updates `tokenLimit`s; requires `Authorization: Bearer $ADMIN_TOKEN`. See "Admin bulk token-limit update" below |
 
 Any other `GET` request is served from `backend/public` (the built frontend), falling back to `index.html` for client-side routing.
+
+### Admin bulk token-limit update
+
+`PUT /api/admin/quota` lets an admin update one or many teams' `tokenLimit` in a single request, authenticated by a shared Bearer token (`ADMIN_TOKEN`) compared with a timing-safe check (`backend/src/adminQuota.ts`). Leave `ADMIN_TOKEN` unset to disable the endpoint.
+
+Every affected `tokenLimit` is capped at `ADMIN_MAX_TOKEN_LIMIT` (default 2,000,000) — a request with any entry over the cap is rejected in full. Requests are validated before anything is written: bad shapes, duplicate `apiKeyId`s, or unknown keys (checked via `BatchGetItem` on the table's `apiKeyId` partition key) abort the whole batch. Successful updates write only the `tokenLimit` attribute, invalidate the quota cache, and return the old/new values. Every outcome (success, validation rejection, unknown keys) posts an audit message to Slack.
+
+```bash
+curl -X PUT http://localhost:4000/api/admin/quota \
+  -H "Authorization: Bearer $ADMIN_TOKEN" \
+  -H "Content-Type: application/json" \
+  -d '{ "updates": [
+    { "apiKeyId": "key-abc", "tokenLimit": 1500000 },
+    { "apiKeyId": "key-def", "tokenLimit": 2000000 }
+  ] }'
+```
+
+| Variable | Description | Default |
+|---|---|---|
+| `ADMIN_TOKEN` | Shared Bearer token for `PUT /api/admin/quota`; unset = endpoint disabled | — |
+| `ADMIN_MAX_TOKEN_LIMIT` | Per-update `tokenLimit` cap | `2000000` |
 
 ### Daily Slack quota report
 
@@ -72,6 +94,9 @@ If `SLACK_WEBHOOK_URL` is set, the backend posts a daily report to that [Slack I
 | `SLACK_WEBHOOK_URL` | Slack Incoming Webhook URL; leave unset to disable the report | — |
 | `SLACK_REPORT_HOURS` | Comma-separated 24h local hours to post, e.g. `9,23` | `9` |
 | `SLACK_REPORT_TZ` | IANA timezone for `SLACK_REPORT_HOURS` | `Asia/Singapore` |
+| `LOCK_TABLE_NAME` | DynamoDB table used to de-duplicate scheduled reports across processes | `LLMReportLock` |
+
+Each scheduled run claims a lock item (`daily-report#<date>#<hour>`) in the lock table with a 1-hour TTL before posting; other processes that lose the race skip the send. This makes the report safe to run from multiple backend replicas. The table must have a `lockId` (String) partition key and TTL enabled on `expiresAt`.
 
 Test it on demand without waiting for the schedule:
 

@@ -1,6 +1,7 @@
 import { sendDailyReport } from "../dailyReport";
 
-sendDailyReport()
+// Manual test run: use a distinct lock slot so it never blocks (or is blocked by) the scheduled reports.
+sendDailyReport(-1)
   .then(() => {
     console.log("Done.");
     process.exit(0);

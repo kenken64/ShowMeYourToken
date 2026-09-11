@@ -783,3 +783,29 @@
 .admin-row-dirty {
   background: var(--badge-bg);
 }
+
+.admin-row-exceeded {
+  background: rgba(180, 35, 24, 0.05);
+}
+
+.admin-row-exceeded.admin-row-dirty {
+  background: rgba(180, 35, 24, 0.1);
+}
+
+.admin-used-exceeded {
+  color: var(--danger-text);
+  font-weight: 600;
+}
+
+.admin-exceeded-badge {
+  display: inline-block;
+  margin-left: 0.5rem;
+  padding: 0.1rem 0.45rem;
+  border-radius: 999px;
+  background: rgba(180, 35, 24, 0.1);
+  color: var(--danger-text);
+  font-size: 0.72rem;
+  font-weight: 600;
+  letter-spacing: 0.01em;
+  vertical-align: 0.05em;
+}

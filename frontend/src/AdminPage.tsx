@@ -261,8 +261,12 @@ export function AdminPage() {
                   {pageItems.map((item) => {
                     const draft = drafts.get(item.apiKeyId) ?? "";
                     const dirty = draft.trim() !== "" && Number(draft) !== item.tokenLimit;
+                    const exceeded = item.tokenLimit > 0 && item.usedTokens >= item.tokenLimit;
+                    const rowClass = [dirty ? "admin-row-dirty" : "", exceeded ? "admin-row-exceeded" : ""]
+                      .filter(Boolean)
+                      .join(" ");
                     return (
-                      <tr key={item.apiKeyId} className={dirty ? "admin-row-dirty" : ""}>
+                      <tr key={item.apiKeyId} className={rowClass}>
                         <td>
                           <div className="admin-team">
                             <span className="team-name-cell">{item.teamName ?? "—"}</span>
@@ -270,7 +274,10 @@ export function AdminPage() {
                           </div>
                         </td>
                         <td className="team-cell">{item.apiKeyId}</td>
-                        <td>{item.usedTokens.toLocaleString()}</td>
+                        <td className={exceeded ? "admin-used-exceeded" : ""}>
+                          {item.usedTokens.toLocaleString()}
+                          {exceeded && <span className="admin-exceeded-badge">Exceeded</span>}
+                        </td>
                         <td>{item.tokenLimit.toLocaleString()}</td>
                         <td>
                           <input

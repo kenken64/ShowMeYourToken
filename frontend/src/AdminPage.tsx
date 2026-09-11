@@ -5,6 +5,26 @@ import type { QuotaItem } from "./types";
 const SESSION_KEY = "admin-token";
 const PAGE_SIZE = 20;
 
+type SortKey = "team" | "used" | "limit";
+type SortDir = "asc" | "desc";
+
+const DEFAULT_SORT_DIR: Record<SortKey, SortDir> = {
+  team: "asc",
+  used: "desc",
+  limit: "desc",
+};
+
+function compareItems(a: QuotaItem, b: QuotaItem, key: SortKey): number {
+  switch (key) {
+    case "team":
+      return (a.teamName ?? a.teamId).localeCompare(b.teamName ?? b.teamId);
+    case "used":
+      return a.usedTokens - b.usedTokens;
+    case "limit":
+      return a.tokenLimit - b.tokenLimit;
+  }
+}
+
 function loadToken(): string {
   try {
     return sessionStorage.getItem(SESSION_KEY) ?? "";
@@ -25,6 +45,19 @@ export function AdminPage() {
   const [applying, setApplying] = useState(false);
   const [result, setResult] = useState<AdminUpdateResult[] | null>(null);
   const [applyError, setApplyError] = useState<string | null>(null);
+  const [sortKey, setSortKey] = useState<SortKey>("team");
+  const [sortDir, setSortDir] = useState<SortDir>("asc");
+
+  const handleSort = (key: SortKey) => {
+    if (key === sortKey) {
+      setSortDir((d) => (d === "asc" ? "desc" : "asc"));
+    } else {
+      setSortKey(key);
+      setSortDir(DEFAULT_SORT_DIR[key]);
+    }
+  };
+
+  const sortArrow = (key: SortKey) => (sortKey === key ? (sortDir === "asc" ? "▲" : "▼") : "");
 
   const load = useCallback(() => {
     setLoading(true);
@@ -42,8 +75,9 @@ export function AdminPage() {
   }, [load]);
 
   const filtered = useMemo(() => {
+    const dir = sortDir === "asc" ? 1 : -1;
+    const sorted = [...items].sort((a, b) => compareItems(a, b, sortKey) * dir);
     const query = search.trim().toLowerCase();
-    const sorted = [...items].sort((a, b) => a.teamId.localeCompare(b.teamId));
     if (!query) return sorted;
     return sorted.filter(
       (i) =>
@@ -51,7 +85,7 @@ export function AdminPage() {
         i.teamName?.toLowerCase().includes(query) ||
         i.apiKeyId.toLowerCase().includes(query)
     );
-  }, [items, search]);
+  }, [items, search, sortKey, sortDir]);
 
   useEffect(() => {
     setPage(1);
@@ -205,10 +239,16 @@ export function AdminPage() {
               <table className="quota-table">
                 <thead>
                   <tr>
-                    <th>Team</th>
+                    <th className="sortable" aria-sort={sortKey === "team" ? (sortDir === "asc" ? "ascending" : "descending") : "none"} onClick={() => handleSort("team")}>
+                      Team <span className="sort-arrow">{sortArrow("team")}</span>
+                    </th>
                     <th>API key</th>
-                    <th>Used</th>
-                    <th>Current limit</th>
+                    <th className="sortable" aria-sort={sortKey === "used" ? (sortDir === "asc" ? "ascending" : "descending") : "none"} onClick={() => handleSort("used")}>
+                      Used <span className="sort-arrow">{sortArrow("used")}</span>
+                    </th>
+                    <th className="sortable" aria-sort={sortKey === "limit" ? (sortDir === "asc" ? "ascending" : "descending") : "none"} onClick={() => handleSort("limit")}>
+                      Current limit <span className="sort-arrow">{sortArrow("limit")}</span>
+                    </th>
                     <th>New limit</th>
                   </tr>
                 </thead>

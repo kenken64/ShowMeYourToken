@@ -17,3 +17,30 @@ export async function fetchBilling(): Promise<BillingSummary> {
   }
   return res.json();
 }
+
+export interface AdminUpdateResult {
+  apiKeyId: string;
+  teamId: string | null;
+  oldLimit: number;
+  newLimit: number;
+}
+
+export async function updateQuota(
+  token: string,
+  updates: { apiKeyId: string; tokenLimit: number }[]
+): Promise<{ updated: AdminUpdateResult[] }> {
+  const res = await fetch(`${API_BASE}/api/admin/quota`, {
+    method: "PUT",
+    headers: {
+      "Content-Type": "application/json",
+      Authorization: `Bearer ${token}`,
+    },
+    body: JSON.stringify({ updates }),
+  });
+
+  const body = await res.json().catch(() => ({}));
+  if (!res.ok) {
+    throw new Error((body as { error?: string }).error ?? `Request failed: ${res.status}`);
+  }
+  return body as { updated: AdminUpdateResult[] };
+}

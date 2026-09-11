@@ -1,6 +1,7 @@
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { fetchBilling, fetchQuota } from "./api";
 import { CategoryMeter, QuotaStatusMeter, TopUsageChart } from "./Insights";
+import { AdminPage } from "./AdminPage";
 import type { BillingSummary, QuotaItem } from "./types";
 import "./App.css";
 
@@ -96,7 +97,7 @@ function compareItems(a: QuotaItem, b: QuotaItem, key: SortKey): number {
   }
 }
 
-function App() {
+function Dashboard() {
   const [items, setItems] = useState<QuotaItem[]>([]);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -426,6 +427,13 @@ function App() {
       </div>
     </main>
   );
+}
+
+function App() {
+  if (window.location.pathname === "/admin") {
+    return <AdminPage />;
+  }
+  return <Dashboard />;
 }
 
 export default App;

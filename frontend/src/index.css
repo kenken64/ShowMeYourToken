@@ -1,8 +1,76 @@
 :root {
-  color-scheme: light;
+  color-scheme: light dark;
   font: 17px/1.5 system-ui, "Segoe UI", Roboto, sans-serif;
   -webkit-font-smoothing: antialiased;
   -moz-osx-font-smoothing: grayscale;
+
+  --bg-page: #f5f6f8;
+  --bg-card: #ffffff;
+  --bg-surface: #fafafa;
+  --bg-surface-hover: #f3f4f6;
+  --border-default: #e5e7eb;
+  --border-subtle: #eef0f2;
+  --border-input: #d1d5db;
+  --border-row: #f3f4f6;
+  --text-heading: #111827;
+  --text-body: #1f2937;
+  --text-secondary: #374151;
+  --text-muted: #6b7280;
+  --text-faint: #9ca3af;
+  --accent: #6366f1;
+  --accent-strong: #4338ca;
+  --accent-ring: rgba(99, 102, 241, 0.12);
+  --badge-bg: #eef2ff;
+  --badge-text: #4338ca;
+  --success-bg: #ecfdf5;
+  --success-text: #047857;
+  --danger-text: #b42318;
+  --row-hover: #fafbfc;
+  --usage-track: #f0f1f3;
+  --shadow-1: rgba(16, 24, 40, 0.04);
+  --shadow-2: rgba(16, 24, 40, 0.06);
+  --tab-active-bg: #111827;
+  --tab-active-text: #ffffff;
+  --tab-count-bg: rgba(107, 114, 128, 0.15);
+  --tab-count-active-bg: rgba(255, 255, 255, 0.2);
+  --sep-color: #d1d5db;
+  --logo-chip-bg: transparent;
+}
+
+@media (prefers-color-scheme: dark) {
+  :root {
+    --bg-page: #0d0f13;
+    --bg-card: #15171c;
+    --bg-surface: #1a1d23;
+    --bg-surface-hover: #22252c;
+    --border-default: #2a2e37;
+    --border-subtle: #23262d;
+    --border-input: #383d47;
+    --border-row: #23262d;
+    --text-heading: #f3f4f6;
+    --text-body: #e5e7eb;
+    --text-secondary: #cbd5e1;
+    --text-muted: #9099a8;
+    --text-faint: #767e8c;
+    --accent: #818cf8;
+    --accent-strong: #a5b4fc;
+    --accent-ring: rgba(129, 140, 248, 0.22);
+    --badge-bg: rgba(99, 102, 241, 0.18);
+    --badge-text: #a5b4fc;
+    --success-bg: rgba(16, 185, 129, 0.16);
+    --success-text: #34d399;
+    --danger-text: #f87171;
+    --row-hover: #1c1f26;
+    --usage-track: #262a31;
+    --shadow-1: rgba(0, 0, 0, 0.3);
+    --shadow-2: rgba(0, 0, 0, 0.45);
+    --tab-active-bg: #f3f4f6;
+    --tab-active-text: #111827;
+    --tab-count-bg: rgba(148, 163, 184, 0.18);
+    --tab-count-active-bg: rgba(17, 24, 39, 0.15);
+    --sep-color: #3a3f4b;
+    --logo-chip-bg: #ffffff;
+  }
 }
 
 * {
@@ -11,8 +79,8 @@
 
 body {
   margin: 0;
-  background: #f5f6f8;
-  color: #1f2937;
+  background: var(--bg-page);
+  color: var(--text-body);
 }
 
 h1 {

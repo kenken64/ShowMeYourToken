@@ -68,7 +68,7 @@ Any other `GET` request is served from `backend/public` (the built frontend), fa
 
 `PUT /api/admin/quota` lets an admin update one or many teams' `tokenLimit` in a single request, authenticated by a shared Bearer token (`ADMIN_TOKEN`) compared with a timing-safe check (`backend/src/adminQuota.ts`). Leave `ADMIN_TOKEN` unset to disable the endpoint.
 
-Every affected `tokenLimit` is capped at `ADMIN_MAX_TOKEN_LIMIT` (default 2,000,000) — a request with any entry over the cap is rejected in full. Requests are validated before anything is written: bad shapes, duplicate `apiKeyId`s, or unknown keys (checked via `BatchGetItem` on the table's `apiKeyId` partition key) abort the whole batch. Successful updates write only the `tokenLimit` attribute, invalidate the quota cache, and return the old/new values. Every outcome (success, validation rejection, unknown keys) posts an audit message to Slack.
+Each team has a **daily increase allowance** of `ADMIN_DAILY_LIMIT` (default 2,000,000) over a rolling 24h window: increases to `tokenLimit` consume from it atomically (tracked in the `LLMReportLock` table as `quota-allowance#<apiKeyId>` items), while decreases are always allowed and consume nothing. Requests are validated before anything is written: bad shapes, duplicate `apiKeyId`s, or unknown keys (checked via `BatchGetItem` on the table's `apiKeyId` partition key) abort the whole batch. Per-key results are returned (`updated` / `exceeded` / `conflict`), the quota cache is invalidated, and every outcome posts an audit message to Slack with the team code and name.
 
 ```bash
 curl -X PUT http://localhost:4000/api/admin/quota \
@@ -83,7 +83,7 @@ curl -X PUT http://localhost:4000/api/admin/quota \
 | Variable | Description | Default |
 |---|---|---|
 | `ADMIN_TOKEN` | Shared Bearer token for `PUT /api/admin/quota`; unset = endpoint disabled | — |
-| `ADMIN_MAX_TOKEN_LIMIT` | Per-update `tokenLimit` cap | `2000000` |
+| `ADMIN_DAILY_LIMIT` | Per-team daily `tokenLimit` increase allowance (rolling 24h) | `2000000` |
 
 ### Daily Slack quota report
 

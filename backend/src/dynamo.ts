@@ -1,7 +1,8 @@
 import { ConditionalCheckFailedException, DynamoDBClient } from "@aws-sdk/client-dynamodb";
 import {
-  BatchGetCommand,
   DynamoDBDocumentClient,
+  BatchGetCommand,
+  GetCommand,
   PutCommand,
   ScanCommand,
   UpdateCommand,
@@ -100,18 +101,107 @@ export async function getQuotasByKey(apiKeyIds: string[]): Promise<Map<string, Q
   return found;
 }
 
-/** Sets only the tokenLimit attribute for each apiKeyId, leaving other attributes untouched. Assumes the keys exist. */
-export async function setTokenLimits(updates: { apiKeyId: string; tokenLimit: number }[]): Promise<void> {
-  await Promise.all(
-    updates.map((u) =>
-      ddb.send(
-        new UpdateCommand({
-          TableName: TABLE_NAME,
-          Key: { apiKeyId: u.apiKeyId },
-          UpdateExpression: "SET tokenLimit = :limit",
-          ExpressionAttributeValues: { ":limit": u.tokenLimit },
+export interface AllowanceState {
+  used: number;
+  windowStart: number;
+}
+
+/**
+ * Atomically consumes `amount` from a team's daily (rolling 24h) allowance.
+ * Returns the remaining allowance on success, or null if the request would exceed the limit.
+ */
+export async function consumeDailyAllowance(
+  apiKeyId: string,
+  amount: number,
+  dailyLimit: number
+): Promise<{ remaining: number } | null> {
+  const windowMs = 24 * 60 * 60 * 1000;
+  const now = Date.now();
+  const key = { lockId: `quota-allowance#${apiKeyId}` };
+
+  for (let attempt = 0; attempt < 5; attempt++) {
+    const current = await ddb.send(
+      new GetCommand({ TableName: LOCK_TABLE_NAME, Key: key })
+    );
+    const raw = current.Item as { used?: number; windowStart?: number } | undefined;
+    const inWindow = raw && typeof raw.windowStart === "number" && now - raw.windowStart < windowMs;
+    const used = inWindow && typeof raw.used === "number" ? raw.used : 0;
+    const windowStart = inWindow ? raw.windowStart! : now;
+
+    if (used + amount > dailyLimit) return null;
+
+    try {
+      await ddb.send(
+        new PutCommand({
+          TableName: LOCK_TABLE_NAME,
+          Item: {
+            ...key,
+            used: used + amount,
+            windowStart,
+            expiresAt: Math.floor((windowStart + windowMs) / 1000) + 60 * 60, // TTL grace period
+          },
+          ConditionExpression:
+            "attribute_not_exists(lockId) OR (used = :u AND windowStart = :w)",
+          ExpressionAttributeValues: { ":u": used, ":w": windowStart },
         })
-      )
-    )
+      );
+      return { remaining: dailyLimit - (used + amount) };
+    } catch (err) {
+      if (err instanceof ConditionalCheckFailedException) continue; // lost a race; reload and retry
+      throw err;
+    }
+  }
+
+  return null; // contended too many times; treat as rejected
+}
+
+/** Sets tokenLimit only if it currently equals expectedOld. Returns false if the row changed underneath us. */
+export async function setTokenLimitIfUnchanged(
+  apiKeyId: string,
+  tokenLimit: number,
+  expectedOld: number
+): Promise<boolean> {
+  try {
+    await ddb.send(
+      new UpdateCommand({
+        TableName: TABLE_NAME,
+        Key: { apiKeyId },
+        UpdateExpression: "SET tokenLimit = :limit",
+        ConditionExpression: "tokenLimit = :expected",
+        ExpressionAttributeValues: { ":limit": tokenLimit, ":expected": expectedOld },
+      })
+    );
+    return true;
+  } catch (err) {
+    if (err instanceof ConditionalCheckFailedException) return false;
+    throw err;
+  }
+}
+
+/** Unconditionally sets tokenLimit (used for decreases, which don't consume allowance). */
+export async function setTokenLimit(apiKeyId: string, tokenLimit: number): Promise<void> {
+  await ddb.send(
+    new UpdateCommand({
+      TableName: TABLE_NAME,
+      Key: { apiKeyId },
+      UpdateExpression: "SET tokenLimit = :limit",
+      ExpressionAttributeValues: { ":limit": tokenLimit },
+    })
   );
+}
+
+/** Reads the current daily allowance state for display purposes (no mutation). */
+export async function getAllowanceState(apiKeyId: string, dailyLimit: number): Promise<{ remaining: number }> {
+  const windowMs = 24 * 60 * 60 * 1000;
+  const now = Date.now();
+  const result = await ddb.send(
+    new GetCommand({
+      TableName: LOCK_TABLE_NAME,
+      Key: { lockId: `quota-allowance#${apiKeyId}` },
+    })
+  );
+  const raw = result.Item as { used?: number; windowStart?: number } | undefined;
+  const inWindow = raw && typeof raw.windowStart === "number" && now - raw.windowStart < windowMs;
+  const used = inWindow && typeof raw.used === "number" ? raw.used : 0;
+  return { remaining: Math.max(0, dailyLimit - used) };
 }

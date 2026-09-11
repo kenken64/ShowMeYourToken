@@ -40,7 +40,25 @@ export async function updateQuota(
 
   const body = await res.json().catch(() => ({}));
   if (!res.ok) {
-    throw new Error((body as { error?: string }).error ?? `Request failed: ${res.status}`);
+    const failed = (body as { results?: { apiKeyId: string; status: string }[] }).results?.filter(
+      (r) => r.status !== "updated"
+    );
+    const detail = failed?.length
+      ? failed
+          .map((r) =>
+            r.status === "exceeded"
+              ? `${r.apiKeyId}: over daily allowance`
+              : `${r.apiKeyId}: ${r.status}`
+          )
+          .join("; ")
+      : undefined;
+    throw new Error(detail ?? (body as { error?: string }).error ?? `Request failed: ${res.status}`);
   }
-  return body as { updated: AdminUpdateResult[] };
+
+  const results = (body as { results?: { apiKeyId: string; teamId: string | null; oldLimit: number; requestedLimit: number; status: string }[] }).results ?? [];
+  return {
+    updated: results
+      .filter((r) => r.status === "updated")
+      .map((r) => ({ apiKeyId: r.apiKeyId, teamId: r.teamId, oldLimit: r.oldLimit, newLimit: r.requestedLimit })),
+  };
 }

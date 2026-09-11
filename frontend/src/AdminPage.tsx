@@ -113,8 +113,11 @@ export function AdminPage() {
   if (!token) {
     return (
       <main className="page">
-        <div className="card admin-card">
-          <h1>Admin login</h1>
+        <div className="card admin-card admin-login-card">
+          <div className="admin-header">
+            <h1>Admin sign in</h1>
+            <a className="admin-back" href="/">← Dashboard</a>
+          </div>
           <p className="admin-hint">Enter the admin token to manage team token limits.</p>
           <form
             className="admin-login"
@@ -135,7 +138,6 @@ export function AdminPage() {
               Sign in
             </button>
           </form>
-          <a className="admin-back" href="/">← Back to dashboard</a>
         </div>
       </main>
     );

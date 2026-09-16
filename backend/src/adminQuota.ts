@@ -11,7 +11,7 @@ import { postToSlack } from "./slackClient";
 
 /** Per-team daily increase allowance (rolling 24h), from env ADMIN_DAILY_LIMIT. */
 export const DAILY_LIMIT = Number(process.env.ADMIN_DAILY_LIMIT ?? 2_000_000);
-const MAX_BATCH_SIZE = 100;
+const MAX_BATCH_SIZE = 500;
 
 function isAdminAuthorized(req: Request): boolean {
   const expected = process.env.ADMIN_TOKEN;
@@ -36,7 +36,7 @@ interface UpdateEntry {
   tokenLimit: number;
 }
 
-/** Validates body shape only (no cap checks — the daily allowance handles that). */
+/** Validates body shape and bulk request size (the daily allowance handles per-team cap checks). */
 function parseUpdates(body: unknown): { error: string; attempted: string } | { entries: UpdateEntry[] } {
   const attempted = Array.isArray((body as { updates?: unknown })?.updates)
     ? ((body as { updates: unknown[] }).updates

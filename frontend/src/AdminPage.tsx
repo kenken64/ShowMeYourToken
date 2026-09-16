@@ -42,6 +42,7 @@ export function AdminPage() {
   const [search, setSearch] = useState("");
   const [page, setPage] = useState(1);
   const [drafts, setDrafts] = useState<Map<string, string>>(new Map());
+  const [bulkLimit, setBulkLimit] = useState("");
   const [applying, setApplying] = useState(false);
   const [result, setResult] = useState<AdminUpdateResult[] | null>(null);
   const [applyError, setApplyError] = useState<string | null>(null);
@@ -116,6 +117,18 @@ export function AdminPage() {
     setToken(tokenDraft.trim());
   };
 
+  const setLimitForAllTeams = (value: string) => {
+    setBulkLimit(value);
+
+    const tokenLimit = Number(value);
+    if (value.trim() === "" || !Number.isInteger(tokenLimit) || tokenLimit < 0) {
+      setDrafts(new Map());
+      return;
+    }
+
+    setDrafts(new Map(items.map((item) => [item.apiKeyId, value])));
+  };
+
   const applyChanges = async () => {
     const updates = [...drafts.entries()]
       .map(([apiKeyId, draft]) => {
@@ -136,6 +149,7 @@ export function AdminPage() {
       const res = await updateQuota(token, updates);
       setResult(res.updated);
       setDrafts(new Map());
+      setBulkLimit("");
       await load();
     } catch (err) {
       setApplyError(err instanceof Error ? err.message : "Update failed");
@@ -206,6 +220,20 @@ export function AdminPage() {
 
         {!loading && !error && (
           <>
+            <div className="admin-bulk-control">
+              <label htmlFor="bulk-limit">New limit for all teams</label>
+              <input
+                id="bulk-limit"
+                type="number"
+                className="search-input admin-bulk-input"
+                min={0}
+                step={1}
+                placeholder="Enter token limit"
+                value={bulkLimit}
+                onChange={(e) => setLimitForAllTeams(e.target.value)}
+              />
+            </div>
+
             <div className="toolbar">
               <div className="search-wrap">
                 <input
@@ -288,6 +316,7 @@ export function AdminPage() {
                             placeholder={String(item.tokenLimit)}
                             value={draft}
                             onChange={(e) => {
+                              setBulkLimit("");
                               const next = new Map(drafts);
                               if (e.target.value === "") next.delete(item.apiKeyId);
                               else next.set(item.apiKeyId, e.target.value);

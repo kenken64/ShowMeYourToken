@@ -769,6 +769,28 @@
   font-size: 0.9rem;
 }
 
+.admin-bulk-control {
+  display: flex;
+  align-items: center;
+  gap: 0.75rem;
+  padding: 1rem 1.75rem 0;
+  flex-shrink: 0;
+}
+
+.admin-bulk-control label {
+  color: var(--text-secondary);
+  font-size: 0.9rem;
+  font-weight: 600;
+  white-space: nowrap;
+}
+
+.admin-bulk-input {
+  width: 190px;
+  padding: 0.45rem 0.7rem;
+  font-size: 0.9rem;
+  font-variant-numeric: tabular-nums;
+}
+
 .admin-team {
   display: flex;
   flex-direction: column;
@@ -777,6 +799,8 @@
 
 .admin-limit-input {
   width: 140px;
+  padding: 0.45rem 0.7rem;
+  font-size: 0.9rem;
   font-variant-numeric: tabular-nums;
 }
 
@@ -808,4 +832,17 @@
   font-weight: 600;
   letter-spacing: 0.01em;
   vertical-align: 0.05em;
+}
+
+@media (max-width: 640px) {
+  .admin-bulk-control {
+    align-items: stretch;
+    flex-direction: column;
+    gap: 0.4rem;
+    padding: 0.85rem 1.1rem 0;
+  }
+
+  .admin-bulk-input {
+    width: 100%;
+  }
 }

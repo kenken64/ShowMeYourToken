@@ -105,6 +105,19 @@
   cursor: default;
 }
 
+.tokens-chip {
+  display: inline-flex;
+  align-items: center;
+  font-size: 0.85rem;
+  font-weight: 600;
+  padding: 0.25rem 0.7rem;
+  border-radius: 999px;
+  background: var(--badge-bg);
+  color: var(--badge-text);
+  white-space: nowrap;
+  cursor: default;
+}
+
 .sparkline {
   display: block;
   color: var(--success-text);

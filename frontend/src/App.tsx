@@ -173,6 +173,10 @@ function Dashboard() {
     [items]
   );
   const remainingCount = items.length - exceededCount;
+  const totalUsedTokens = useMemo(
+    () => items.reduce((sum, item) => sum + item.usedTokens, 0),
+    [items]
+  );
 
   const byTab = useMemo(
     () => items.filter((item) => isExceeded(item) === (tab === "exceeded")),
@@ -229,6 +233,11 @@ function Dashboard() {
           <div className="header-stats">
             {!loading && !error && (
               <span className="subtitle">{items.length} teams</span>
+            )}
+            {!loading && !error && (
+              <span className="tokens-chip" title={`${totalUsedTokens.toLocaleString()} tokens used across all teams`}>
+                {new Intl.NumberFormat("en-US", { notation: "compact", maximumFractionDigits: 1 }).format(totalUsedTokens)} tokens used
+              </span>
             )}
             {billing && (
               <span className="billing-chip" title={`AWS cost ${billing.periodStart} to ${billing.periodEnd}${billing.estimated ? " (estimated)" : ""}`}>

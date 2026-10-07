@@ -61,6 +61,7 @@ Expected DynamoDB item shape (one row per team/API key):
 | `GET` | `/api/health` | Health check; returns `{ ok, table }` |
 | `GET` | `/api/quota` | Scans the DynamoDB table (paginating through `LastEvaluatedKey`), joins each item against the team directory, and returns `{ items, count }` where each item also has `teamCode`, `teamName`, and `category` |
 | `PUT` | `/api/admin/quota` | Bulk-updates `tokenLimit`s; requires `Authorization: Bearer $ADMIN_TOKEN`. See "Admin bulk token-limit update" below |
+| `PUT` | `/api/admin/status` | Enables or disables one or many teams; requires `Authorization: Bearer $ADMIN_TOKEN`. See "Admin team usage controls" below |
 
 Any other `GET` request is served from `backend/public` (the built frontend), falling back to `index.html` for client-side routing.
 
@@ -84,6 +85,27 @@ curl -X PUT http://localhost:4000/api/admin/quota \
 |---|---|---|
 | `ADMIN_TOKEN` | Shared Bearer token for `PUT /api/admin/quota`; unset = endpoint disabled | — |
 | `ADMIN_DAILY_LIMIT` | Per-team daily `tokenLimit` increase allowance (rolling 24h) | `2000000` |
+
+### Admin team usage controls
+
+The admin page loads each team's **Usage enabled** checkbox from DynamoDB: `ACTIVE` is checked; every other status is unchecked. Enabled teams always appear before disabled teams, including staged checkbox changes, regardless of the selected sort column or direction. Change individual checkboxes, select teams across pages and use **Enable selected** / **Disable selected**, or use **Enable all teams** / **Disable all teams**. The header selection checkbox selects every matching team across all pages, including search results. The all-team action buttons always target the complete team list, regardless of search.
+
+Usage changes are staged until **Apply usage changes** is clicked. They save independently from token-limit changes and do not consume the daily increase allowance. Successful updates refresh the cached quota data; if some writes fail, the page reports those teams and retains their pending usage changes for retry.
+
+`PUT /api/admin/status` accepts up to 500 unique keys per request and validates the entire batch, including unknown keys, before writing. Each update changes only `status`, preserving `tokenLimit`, `usedTokens`, and `reservedTokens`. It returns per-key results and logs an admin audit to Slack. If a write fails mid-batch, successful changes remain applied and the response is HTTP 422 with details.
+
+```json
+{
+  "updates": [
+    { "apiKeyId": "key-abc", "status": "ACTIVE" },
+    { "apiKeyId": "key-def", "status": "DISABLED" }
+  ]
+}
+```
+
+The deployed `llm-gateway` Lambda already checks `LLMTeamQuota.status` using consistent reads and requires `ACTIVE` before reserving tokens and calling Bedrock. Disabled teams receive HTTP 403 with `Team access is not active`. Requests already reserved or running may finish. No Lambda change is required.
+
+Run the admin status regression tests with `cd backend && bun test`. They mock DynamoDB and disable Slack, so they do not change live team records or send messages.
 
 ### Daily Slack quota report
 

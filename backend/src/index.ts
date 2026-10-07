@@ -5,6 +5,7 @@ import { getDailyCostTrend, getMonthToDateCost, type CostTrendPoint } from "./co
 import { sendDailyReport } from "./dailyReport";
 import { startDailyScheduler } from "./scheduler";
 import { handleAdminQuotaUpdate } from "./adminQuota";
+import { handleAdminStatusUpdate } from "./adminStatus";
 
 const PORT = Number(process.env.PORT ?? 4000);
 const CORS_ORIGIN = process.env.CORS_ORIGIN ?? "http://localhost:5173";
@@ -78,6 +79,11 @@ Bun.serve({
 
     if (url.pathname === "/api/admin/quota" && req.method === "PUT") {
       const res = await handleAdminQuotaUpdate(req);
+      return new Response(res.body, { status: res.status, headers: { ...Object.fromEntries(res.headers), ...corsHeaders } });
+    }
+
+    if (url.pathname === "/api/admin/status" && req.method === "PUT") {
+      const res = await handleAdminStatusUpdate(req);
       return new Response(res.body, { status: res.status, headers: { ...Object.fromEntries(res.headers), ...corsHeaders } });
     }
 

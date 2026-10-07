@@ -6,6 +6,7 @@ import {
   PutCommand,
   ScanCommand,
   UpdateCommand,
+  type BatchGetCommandInput,
 } from "@aws-sdk/lib-dynamodb";
 
 const region = process.env.AWS_REGION;
@@ -54,7 +55,7 @@ export async function scanTable(tableName: string = TABLE_NAME) {
 
   do {
     const result = await ddb.send(
-      new ScanCommand({ TableName: tableName, ExclusiveStartKey: lastEvaluatedKey })
+      new ScanCommand({ TableName: tableName, ExclusiveStartKey: lastEvaluatedKey, ConsistentRead: true })
     );
     items.push(...(result.Items ?? []));
     lastEvaluatedKey = result.LastEvaluatedKey;
@@ -67,6 +68,7 @@ export interface QuotaKeyRow {
   apiKeyId: string;
   teamId: string | null;
   tokenLimit: number;
+  status: string | null;
 }
 
 /** Fetches existing rows by apiKeyId (table partition key). Missing keys are absent from the result. */
@@ -77,28 +79,52 @@ export async function getQuotasByKey(apiKeyIds: string[]): Promise<Map<string, Q
   // BatchGetItem supports at most 100 keys per call.
   for (let i = 0; i < uniqueIds.length; i += 100) {
     const chunk = uniqueIds.slice(i, i + 100);
-    const result = await ddb.send(
-      new BatchGetCommand({
-        RequestItems: {
-          [TABLE_NAME]: {
-            Keys: chunk.map((apiKeyId) => ({ apiKeyId })),
-            ProjectionExpression: "apiKeyId, teamId, tokenLimit",
-          },
-        },
-      })
-    );
-    for (const item of result.Responses?.[TABLE_NAME] ?? []) {
-      const apiKeyId = item.apiKeyId;
-      if (typeof apiKeyId !== "string") continue;
-      found.set(apiKeyId, {
-        apiKeyId,
-        teamId: typeof item.teamId === "string" ? item.teamId : null,
-        tokenLimit: typeof item.tokenLimit === "number" ? item.tokenLimit : 0,
-      });
+    let pending: NonNullable<BatchGetCommandInput["RequestItems"]> = {
+      [TABLE_NAME]: {
+        Keys: chunk.map((apiKeyId) => ({ apiKeyId })),
+        ProjectionExpression: "apiKeyId, teamId, tokenLimit, #status",
+        ExpressionAttributeNames: { "#status": "status" },
+        ConsistentRead: true,
+      },
+    };
+    for (let attempt = 0; attempt < 5; attempt++) {
+      const result = await ddb.send(new BatchGetCommand({ RequestItems: pending }));
+      for (const item of result.Responses?.[TABLE_NAME] ?? []) {
+        const apiKeyId = item.apiKeyId;
+        if (typeof apiKeyId !== "string") continue;
+        found.set(apiKeyId, {
+          apiKeyId,
+          teamId: typeof item.teamId === "string" ? item.teamId : null,
+          tokenLimit: typeof item.tokenLimit === "number" ? item.tokenLimit : 0,
+          status: typeof item.status === "string" ? item.status : null,
+        });
+      }
+      pending = result.UnprocessedKeys ?? {};
+      if (Object.keys(pending).length === 0) break;
+      if (attempt === 4) throw new Error("Could not read all requested team records");
+      await new Promise((resolve) => setTimeout(resolve, 50 * 2 ** attempt));
     }
   }
 
   return found;
+}
+
+export type TeamUsageStatus = "ACTIVE" | "DISABLED";
+
+/** Updates access only, preserving quota counters and refusing to create an unknown team. */
+export async function setTeamStatus(apiKeyId: string, status: TeamUsageStatus): Promise<string | null> {
+  const result = await ddb.send(
+    new UpdateCommand({
+      TableName: TABLE_NAME,
+      Key: { apiKeyId },
+      UpdateExpression: "SET #status = :status",
+      ConditionExpression: "attribute_exists(apiKeyId)",
+      ExpressionAttributeNames: { "#status": "status" },
+      ExpressionAttributeValues: { ":status": status },
+      ReturnValues: "ALL_OLD",
+    })
+  );
+  return typeof result.Attributes?.status === "string" ? result.Attributes.status : null;
 }
 
 export interface AllowanceState {

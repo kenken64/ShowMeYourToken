@@ -712,6 +712,7 @@
 /* Admin page */
 .admin-card {
   max-width: 1100px;
+  overflow-y: auto;
 }
 
 .admin-login-card {
@@ -810,6 +811,89 @@
   gap: 0.15rem;
 }
 
+.admin-usage-control {
+  padding: 0.85rem 1.75rem;
+  border-block: 1px solid var(--border-subtle);
+  flex-shrink: 0;
+}
+
+.admin-usage-heading,
+.admin-usage-actions {
+  display: flex;
+  align-items: center;
+  flex-wrap: wrap;
+  gap: 0.5rem 0.75rem;
+}
+
+.admin-usage-heading {
+  margin-bottom: 0.6rem;
+  color: var(--text-secondary);
+}
+
+.admin-usage-heading span,
+.admin-usage-control p {
+  font-size: 0.85rem;
+  color: var(--text-muted);
+}
+
+.admin-usage-control p {
+  margin: 0.65rem 0 0;
+  line-height: 1.5;
+}
+
+.admin-quota-table {
+  min-width: 1050px;
+}
+
+.admin-quota-table th:first-child,
+.admin-quota-table td:first-child {
+  padding-inline: 0.75rem;
+  text-align: center;
+}
+
+.admin-quota-table th:last-child,
+.admin-quota-table td:last-child {
+  padding-inline: 0.75rem;
+}
+
+.admin-select-column {
+  width: 60px;
+}
+
+.admin-limit-column {
+  width: 175px;
+}
+
+.admin-access-column {
+  width: 155px;
+}
+
+.admin-checkbox {
+  width: 18px;
+  height: 18px;
+  margin: 0;
+  accent-color: var(--accent);
+  cursor: pointer;
+}
+
+.admin-checkbox:disabled {
+  cursor: default;
+}
+
+.admin-usage-checkbox {
+  display: flex;
+  align-items: center;
+  gap: 0.5rem;
+  font-size: 0.9rem;
+  cursor: pointer;
+}
+
+.admin-usage-checkbox small {
+  display: block;
+  color: var(--text-muted);
+  font-size: 0.75rem;
+}
+
 .admin-limit-input {
   width: 140px;
   padding: 0.45rem 0.7rem;
@@ -848,6 +932,25 @@
 }
 
 @media (max-width: 640px) {
+  .admin-page {
+    height: auto;
+    min-height: 100dvh;
+    overflow: visible;
+  }
+
+  .admin-card:not(.admin-login-card) {
+    height: auto;
+    min-height: 100dvh;
+  }
+
+  .admin-card .table-wrap {
+    max-height: 65dvh;
+  }
+
+  .admin-usage-control {
+    padding-inline: 1.1rem;
+  }
+
   .admin-bulk-control {
     align-items: stretch;
     flex-direction: column;

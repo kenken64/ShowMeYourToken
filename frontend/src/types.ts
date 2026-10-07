@@ -1,3 +1,5 @@
+export type TeamUsageStatus = "ACTIVE" | "DISABLED";
+
 export interface QuotaItem {
   teamId: string;
   apiKeyId: string;

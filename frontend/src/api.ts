@@ -1,4 +1,4 @@
-import type { BillingSummary, QuotaResponse } from "./types";
+import type { BillingSummary, QuotaResponse, TeamUsageStatus } from "./types";
 
 const API_BASE = import.meta.env.VITE_API_BASE ?? "";
 
@@ -23,6 +23,31 @@ export interface AdminUpdateResult {
   teamId: string | null;
   oldLimit: number;
   newLimit: number;
+}
+
+export interface AdminStatusUpdateResult {
+  apiKeyId: string;
+  teamId: string | null;
+  oldStatus: string | null;
+  newStatus: TeamUsageStatus;
+  status: "updated" | "failed";
+}
+
+export async function updateTeamStatus(
+  token: string,
+  updates: { apiKeyId: string; status: TeamUsageStatus }[]
+): Promise<{ results: AdminStatusUpdateResult[] }> {
+  const res = await fetch(`${API_BASE}/api/admin/status`, {
+    method: "PUT",
+    headers: { "Content-Type": "application/json", Authorization: `Bearer ${token}` },
+    body: JSON.stringify({ updates }),
+  });
+  const body = await res.json().catch(() => ({})) as { error?: string; results?: AdminStatusUpdateResult[] };
+  // A partially applied batch returns results so successful changes can be reconciled.
+  if ((!res.ok && res.status !== 422) || !Array.isArray(body.results)) {
+    throw new Error(body.error ?? `Request failed: ${res.status}`);
+  }
+  return { results: body.results };
 }
 
 export async function updateQuota(

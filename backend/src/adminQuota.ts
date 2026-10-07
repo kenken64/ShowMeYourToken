@@ -1,4 +1,4 @@
-import { timingSafeEqual } from "node:crypto";
+import { isAdminAuthorized } from "./adminAuth";
 import {
   consumeDailyAllowance,
   getQuotasByKey,
@@ -12,15 +12,6 @@ import { postToSlack } from "./slackClient";
 /** Per-team daily increase allowance (rolling 24h), from env ADMIN_DAILY_LIMIT. */
 export const DAILY_LIMIT = Number(process.env.ADMIN_DAILY_LIMIT ?? 2_000_000);
 const MAX_BATCH_SIZE = 500;
-
-function isAdminAuthorized(req: Request): boolean {
-  const expected = process.env.ADMIN_TOKEN;
-  const got = req.headers.get("authorization")?.replace(/^Bearer\s+/i, "");
-  if (!expected || !got) return false;
-  const a = Buffer.from(got);
-  const b = Buffer.from(expected);
-  return a.length === b.length && timingSafeEqual(a, b);
-}
 
 async function audit(text: string): Promise<void> {
   try {

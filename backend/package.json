@@ -6,6 +6,7 @@
   "scripts": {
     "dev": "bun --watch run src/index.ts",
     "start": "bun run src/index.ts",
+    "test": "bun test src/adminStatus.test.ts",
     "report:slack:test": "bun run src/scripts/sendSlackReportNow.ts"
   },
   "devDependencies": {

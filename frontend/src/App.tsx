@@ -5,7 +5,7 @@ import { AdminPage } from "./AdminPage";
 import type { BillingSummary, QuotaItem } from "./types";
 import "./App.css";
 
-const PAGE_SIZE = 7;
+const PAGE_SIZE = 10;
 const REFRESH_INTERVAL_MS = 60_000;
 
 function usagePercent(item: QuotaItem) {
@@ -185,7 +185,10 @@ function Dashboard() {
 
   const sorted = useMemo(() => {
     const dir = sortDir === "asc" ? 1 : -1;
-    return [...byTab].sort((a, b) => compareItems(a, b, sortKey) * dir);
+    return [...byTab].sort((a, b) => {
+      const enabledOrder = Number(b.status === "ACTIVE") - Number(a.status === "ACTIVE");
+      return enabledOrder || compareItems(a, b, sortKey) * dir;
+    });
   }, [byTab, sortKey, sortDir]);
 
   const filtered = useMemo(() => {

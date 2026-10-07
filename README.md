@@ -1,6 +1,6 @@
 # ShowMeYourAgent Token Quota
 
-A dashboard for the NUS-ISS ShowMeYourAgent programme that shows each team's LLM token usage against their quota. A Bun backend reads usage data from DynamoDB and serves it to a React frontend that lists teams sorted by usage, split into "Has Quota" and "Exceeded" tabs, with search and pagination.
+A dashboard for the NUS-ISS ShowMeYourAgent programme that shows each team's LLM token usage against their quota. A Bun backend reads usage data from DynamoDB and serves it to a React frontend, split into "Has Quota" and "Exceeded" tabs, with search and pagination of 10 teams per page. In each tab, teams with enabled usage (`status: ACTIVE`) always appear first regardless of token limit; the selected column sort applies within the enabled and disabled groups. On page load, each group defaults to sorting by usage descending.
 
 ## Architecture
 
